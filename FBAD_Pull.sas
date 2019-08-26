@@ -1,4 +1,4 @@
-﻿OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
+OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 %LET PULLDATE = %SYSFUNC(today(), yymmdd10.);
 %PUT "&PULLDATE";
@@ -19,6 +19,10 @@
 %LET yesterday = %SYSFUNC(putn(&yesterday_NUM,yymmdd10.));
 %PUT "&yesterday";
 
+%LET _121day_NUM = %EVAL(%SYSFUNC(inputn(&pulldate,yymmdd10.))-121);
+%LET _121day = %SYSFUNC(putn(&_121day_NUM,yymmdd10.));
+%PUT "&_121day";
+
 *** Import new cross sell files. Instructions here:                ***;
 *** R:\Production\MLA\Files for MLA Processing\XSELL\              ***;
 *** XSELL TCI DECSION LENDER.txt. Change dates in the lines        ***;
@@ -29,26 +33,26 @@
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190705);
-	call symput ('retail_id', 'RetailXSITA8.0_2019');
-	call symput ('auto_id', 'AutoXSITA8.0_2019');
-	call symput ('fb_id', 'FBITA8.0_2019');
+	call symput ('today', 20190823);
+	call symput ('retail_id', 'RetailFBCAD_2019');
+	call symput ('auto_id', 'AutoFBCAD_2019');
+	call symput ('fb_id', 'FBCAD_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXS_ITA_20190705flagged.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXS_ITA_20190705final.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190705p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190823p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FB_MITA_20190705p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190823p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXSPB_ITA_20190705final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXSPB_ITA_20190705final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXS_ITA_20190705final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH2.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBXS_ITA_20190705final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH2.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -123,13 +127,14 @@ run;
 
 *** pull in XS from loan table, borrower table and merge --------- ***;
 data XS_L;
-	set dw.vw_loan_NLS(
+	set dw.vw_loan(
 		keep = ownst purcd xno_availcredit xno_tduepoff cifno bracctno
 			   id ssno1 ownbr ssno1_rt7 ssno2 LnAmt FinChg LoanType 
 			   EntDate LoanDate ClassID ClassTranslation
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1
-			   DatePaidLast APRate CrScore CurBal NetLoanAmount);
+			   DatePaidLast APRate CrScore CurBal NetLoanAmount 
+			   legal_loan_type);
 	where cifno ne "" & 
 		  entdate >= "&_1yrdate" & 
 		  pocd = "" & 
@@ -169,13 +174,13 @@ data BorrNLS;
 	State = strip(state);
 	Zip = strip(zip);
 
-	if find(fname, "JR") ge 1 then do;
-		firstname = compress(fname, "JR");
+	if find(fname, " JR") ge 1 then do;
+		firstname = tranwrd(fname, "JR", "");
 		suffix = "JR";
 	end;
 
-	if find(fname, "SR") ge 1 then do;
-		firstname = compress(fname, "SR");
+	if find(fname, " SR") ge 1 then do;
+		firstname = tranwrd(fname, "SR", "");
 		suffix = "SR";
 	end;
 
@@ -228,7 +233,8 @@ data loanextraXS;
 			   EntDate LoanDate ClassID ClassTranslation 
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1 
-			   DatePaidLast APRate CrScore CurBal NetLoanAmount);
+			   DatePaidLast APRate CrScore CurBal NetLoanAmount 
+			   legal_loan_type);
 	where entdate >= "&_1yrdate" & 
 		  pocd = "" & 
 		  plcd = "" & 
@@ -275,7 +281,7 @@ data loanparadataXS;
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast 
 			   APRate CrScore NetLoanAmount XNO_AvailCredit 
-			   XNO_TDuePOff CurBal conprofile1);
+			   XNO_TDuePOff CurBal conprofile1 legal_loan_type);
 	where entdate >= "&_1yrdate" & 
 		  plcd = "" & 
 		  pocd = "" & 
@@ -310,13 +316,13 @@ data BorrParadata;
 	State = strip(state);
 	Zip = strip(zip);
 
-	if find(fname, "JR") ge 1 then do;
-		firstname = compress(fname, "JR");
+	if find(fname, " JR") ge 1 then do;
+		firstname = tranwrd(fname, "JR", "");
 		suffix = "JR";
 	end;
 
-	if find(fname, "SR") ge 1 then do;
-		firstname = compress(fname, "SR");
+	if find(fname, " SR") ge 1 then do;
+		firstname = tranwrd(fname, "SR", "");
 		suffix = "SR";
 	end;
 
@@ -492,8 +498,8 @@ data mades2;
 			   BnkrptChapter ConProfile1 DatePaidLast APRate CrScore
 			   CurBal Adr1 Adr2 City State zip dob Confidential 
 			   Solicit CeaseandDesist CreditScore firstname middlename 
-			   lastname ss7brstate
-			   phone cellphone NetLoanAmount);
+			   lastname ss7brstate phone cellphone NetLoanAmount 
+			   legal_loan_type);
 	made_unmade = "MADE";
 run;
 
@@ -551,12 +557,13 @@ run;
 
 *** Pull in data for FBs ----------------------------------------- ***;
 data loan_pull;
-	set dw.vw_loan_nls(
+	set dw.vw_loan(
 		keep = cifno bracctno id ownbr ownst ssno1_rt7 ssno1 ssno2
 			   LnAmt FinChg ssno1_rt7 LoanType EntDate LoanDate ClassID
 			   ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd
 			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
-			   BnkrptChapter DatePaidLast APRate CrScore CurBal NetLoanAmount);
+			   BnkrptChapter DatePaidLast APRate CrScore CurBal NetLoanAmount 
+			   legal_loan_type);
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
@@ -592,7 +599,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 			   FirstPyDate SrCD pocd POffDate purcd plcd PlDate 
 			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
 			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
-			   CurBal conprofile1);
+			   CurBal conprofile1 legal_loan_type);
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
@@ -631,7 +638,7 @@ data loanparadatafb;
 			   FirstPyDate SrCD purcd pocd POffDate plcd PlDate PlAmt
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
-			   conprofile1);
+			   conprofile1 legal_loan_type);
 	where POffDate between "&_6yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
@@ -1106,7 +1113,7 @@ proc sort
 	by ss7brstate; 
 run;
 
-data merged_l_b2;
+data merged_l_b3;
 	merge merged_l_b2(in = x) mult_open;
 	by ss7brstate;
 	if x;
@@ -1120,7 +1127,7 @@ run;
 *** Flag bad ssns ------------------------------------------------ ***;
 
 data Merged_L_B2; 
-	set Merged_L_B2;
+	set Merged_L_B3;
 	Adr1 = strip(Adr1);
 	Adr2 = strip(adr2);
 	City = strip(city);
@@ -1194,6 +1201,8 @@ data Merged_L_B2;
 	if ownbr = "1016" then ownbr = "1008";
 	if ownbr = "1003" and zip =: "87112" then ownbr = "1013";
 	if ownbr = "1018" then ownbr = "1008";
+	IF legal_loan_type = "AL MINI-CODE" THEN ALMINICODE_FLAG = "X";
+	IF ENTDATE < "&_121day" THEN ALMINICODE_FLAG = "";
 run;
 
 data merged_l_b2;
@@ -1496,6 +1505,7 @@ Delete NC Auto Unmades,
 Delete XS Bad FICOs,
 Delete if Equity Threshhold not met,
 Delete DLQ Renewal,	
+Delete 120 day AL Mini-Code
 ;
 run;
 
@@ -1689,6 +1699,17 @@ quit;
 data final; 
 	set final; 
 	if dlqren_flag = ""; 
+run;
+
+proc sql; 
+	insert into count 
+	select count(*) as Count 
+	from final; 
+quit;
+
+data final; 
+	set final; 
+	if ALMINICODE_FLAG = ""; 
 run;
 
 proc sql; 
