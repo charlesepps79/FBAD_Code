@@ -33,26 +33,26 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190826);
+	call symput ('today', 20190828);
 	call symput ('retail_id', 'RetailFBCAD_2019');
 	call symput ('auto_id', 'AutoFBCAD_2019');
 	call symput ('fb_id', 'FBCAD_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826flagged.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190826p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190828p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190826p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190828p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH2.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH2.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH2.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH2.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
