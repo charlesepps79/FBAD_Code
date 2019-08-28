@@ -33,26 +33,26 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190823);
+	call symput ('today', 20190826);
 	call symput ('retail_id', 'RetailFBCAD_2019');
 	call symput ('auto_id', 'AutoFBCAD_2019');
 	call symput ('fb_id', 'FBCAD_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823flagged.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190823p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190826p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190823p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190826p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH2.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH2.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190823final_HH2.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190826final_HH2.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -564,8 +564,8 @@ data loan_pull;
 			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
 			   BnkrptChapter DatePaidLast APRate CrScore CurBal NetLoanAmount 
 			   legal_loan_type);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
-		  (pocd = "13" or pocd = "10" or pocd = "50") & 
+	where POffDate between "&_1yrdate" and "&yesterday" & 
+		  (pocd = "13" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 					"TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
@@ -600,8 +600,8 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
 			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
 			   CurBal conprofile1 legal_loan_type);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
-		  (pocd = "13" or pocd = "10" or pocd = "50") & 
+	where POffDate between "&_1yrdate" and "&yesterday" & 
+		  (pocd = "13" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
 				   "TN", "MO", "WI");
 	ss7brstate = cats(ssno1_rt7, substr(ownbr, 1, 2));
@@ -639,7 +639,7 @@ data loanparadatafb;
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
 			   conprofile1 legal_loan_type);
-	where POffDate between "&_6yrdate" and "&yesterday" & 
+	where POffDate between "&_1yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
 						"TN", "MO", "WI");
@@ -1203,6 +1203,8 @@ data Merged_L_B2;
 	if ownbr = "1018" then ownbr = "1008";
 	IF legal_loan_type = "AL MINI-CODE" THEN ALMINICODE_FLAG = "X";
 	IF ENTDATE < "&_121day" THEN ALMINICODE_FLAG = "";
+	IF CLASSTRANSLATION in ("Retail", "Auto-I", "Auto-D") 
+		THEN RETAILAUTO_FLAG = "X";
 run;
 
 data merged_l_b2;
@@ -1458,7 +1460,10 @@ run;
 *** Apply all delinquency related flags -------------------------- ***;
 data merged_l_b2; /* flag for bad dlqatb */
 	set merged_l_b2;
-	if cd60 > 1 or cd90 > 1 then DLQ_Flag = "X";
+	if cd60 > 1 then DLQ_Flag = "X";
+	*if cd60 = . then DLQ_Flag = "";
+	*IF times30 > 2 then DLQ_Flag = "X";
+	*if times30 = . then DLQ_Flag = "X";
 run;
 
 proc sort 
@@ -1506,6 +1511,7 @@ Delete XS Bad FICOs,
 Delete if Equity Threshhold not met,
 Delete DLQ Renewal,	
 Delete 120 day AL Mini-Code
+Delete Retail or Auto Loans
 ;
 run;
 
@@ -1718,6 +1724,17 @@ proc sql;
 	from final; 
 quit;
 
+data final; 
+	set final; 
+	if RETAILAUTO_FLAG = ""; 
+run;
+
+proc sql; 
+	insert into count 
+	select count(*) as Count 
+	from final; 
+quit;
+
 proc print 
 	data = count noobs; /* Print Final Count Table */
 run;
@@ -1825,7 +1842,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190705p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190826p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1841,7 +1858,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_4_9_FB_MITA_20190705p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190826p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1950,33 +1967,21 @@ data finalhh2;
 run;
 
 data fbxsita_hh;
-	length From_Offer_Amount 8. 
-		   Up_to_Offer 8.;
+	length offer_amount 8.;
 	set finalhh2;
-	if cst = "SC" then From_Offer_Amount = 601;
-	if cst = "NC" then From_Offer_Amount = 500;
-	if cst = "TN" then From_Offer_Amount = 501;
-	if cst = "AL" then From_Offer_Amount = 501;
-	if cst = "OK" then From_Offer_Amount = 501;
-	if cst = "NM" then From_Offer_Amount = 500;
-	if cst = "TX" then From_Offer_Amount = 500;
-	if cst = "GA" then From_Offer_Amount = 500;
-	if cst = "VA" then From_Offer_Amount = 500;
-	if cst = "MO" then From_Offer_Amount = 601;
-	if cst = "WI" then From_Offer_Amount = 601;
-	if cst = "SC" then up_to_offer = 12000;
-	if cst = "NC" then up_to_offer = 7500;
-	if cst = "TN" then up_to_offer = 12000;
-	if cst = "AL" then up_to_offer = 12000;
-	if cst = "OK" then up_to_offer = 12000;
-	if cst = "NM" then up_to_offer = 12000;
-	if cst = "TX" then up_to_offer = 12000;
-	if cst = "GA" then up_to_offer = 12000;
-	if cst = "VA" then up_to_offer = 12000;
-	if cst = "MO" then up_to_offer = 12000;
-	if cst = "WI" then up_to_offer = 12000;
-	if from_offer_amount = . then from_offer_amount = 600;
-	if up_to_offer = . then up_to_offer = 7000;
+	IF times30 = 0 and classtranslation in ('Small' 'Checks') then offer_amount = NetLoanAmount + 500;
+	IF times30 = 0 and classtranslation  = 'Large' then offer_amount = NetLoanAmount + 1000;
+
+	IF times30 = 1 and classtranslation in ('Small' 'Checks') then offer_amount = NetLoanAmount + 250;
+	IF times30 = 1 and classtranslation  = 'Large' then offer_amount = NetLoanAmount + 500;
+
+	IF times30 > 1 then offer_amount = NetLoanAmount;
+	IF times30 = . then offer_amount = NetLoanAmount;
+	IF n_60_dpd = 1 then offer_amount = NetLoanAmount;
+	
+	IF classtranslation in ('Small' 'Checks') and offer_amount > 2400 then offer_amount = 2400;
+	IF OWNST = 'TX' and classtranslation in ('Small' 'Checks') and offer_amount > 1500 then offer_amount = 1500;
+	IF OWNST = 'OK' and classtranslation in ('Small' 'Checks') and offer_amount > 1400 then offer_amount = 1400;
 run;
 
 *** For when pbita isn't included -------------------------------- ***;
@@ -1986,8 +1991,7 @@ data finalhh3;
 		   numpymnts $15 
 		   orig_amtid $15 
 		   percent $15 
-		   From_Offer_Amount 8. 
-		   Up_to_Offer 8.;
+		   offer_amount 8.;
 	set fbxsita_hh;
 	if mla_status ne "";
 run;
@@ -1995,8 +1999,8 @@ run;
 proc sql;
 	create table finalesthh as
 	select custid, branch, cfname1,	cmname1, clname1, caddr1, caddr2,
-		   ccity, cst, czip, ssn, amt_given1, from_offer_amount, 
-		   up_to_offer, percent,numpymnts, camp_type, orig_amtid, fico,
+		   ccity, cst, czip, ssn, amt_given1, offer_amount, 
+		   percent,numpymnts, camp_type, orig_amtid, fico,
 		   dob, mla_status, risk_segment, n_60_dpd, conprofile, 
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
 		   fico_range_25pt, state1, test_code, poffdate, phone,
