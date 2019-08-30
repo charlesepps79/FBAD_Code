@@ -33,26 +33,26 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190828);
+	call symput ('today', 20190829);
 	call symput ('retail_id', 'RetailFBCAD_2019');
 	call symput ('auto_id', 'AutoFBCAD_2019');
 	call symput ('fb_id', 'FBCAD_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828flagged.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190828p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190829p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190828p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190829p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH.csv');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH2.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH2.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190828final_HH2.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH2.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -1461,7 +1461,7 @@ run;
 data merged_l_b2; /* flag for bad dlqatb */
 	set merged_l_b2;
 	if cd60 > 1 then DLQ_Flag = "X";
-	*if cd60 = . then DLQ_Flag = "";
+	if last12 > 1 then DLQ_Flag = "X";
 	*IF times30 > 2 then DLQ_Flag = "X";
 	*if times30 = . then DLQ_Flag = "X";
 run;
@@ -1842,7 +1842,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190826p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190829p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1858,7 +1858,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190826p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190829p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1969,19 +1969,30 @@ run;
 data fbxsita_hh;
 	length offer_amount 8.;
 	set finalhh2;
-	IF times30 = 0 and classtranslation in ('Small' 'Checks') then offer_amount = NetLoanAmount + 500;
-	IF times30 = 0 and classtranslation  = 'Large' then offer_amount = NetLoanAmount + 1000;
-
-	IF times30 = 1 and classtranslation in ('Small' 'Checks') then offer_amount = NetLoanAmount + 250;
-	IF times30 = 1 and classtranslation  = 'Large' then offer_amount = NetLoanAmount + 500;
-
-	IF times30 > 1 then offer_amount = NetLoanAmount;
-	IF times30 = . then offer_amount = NetLoanAmount;
-	IF n_60_dpd = 1 then offer_amount = NetLoanAmount;
-	
-	IF classtranslation in ('Small' 'Checks') and offer_amount > 2400 then offer_amount = 2400;
-	IF OWNST = 'TX' and classtranslation in ('Small' 'Checks') and offer_amount > 1500 then offer_amount = 1500;
-	IF OWNST = 'OK' and classtranslation in ('Small' 'Checks') and offer_amount > 1400 then offer_amount = 1400;
+	IF times30 = 0 and classtranslation in ('Small' 'Checks') 
+		then offer_amount = NetLoanAmount + 500;
+	IF times30 = 0 and classtranslation  = 'Large' 
+		then offer_amount = NetLoanAmount + 1000;
+	IF times30 = 1 and classtranslation in ('Small' 'Checks') 
+		then offer_amount = NetLoanAmount + 250;
+	IF times30 = 1 and classtranslation  = 'Large' 
+		then offer_amount = NetLoanAmount + 500;
+	IF times30 > 1 
+		then offer_amount = NetLoanAmount;
+	IF times30 = . 
+		then offer_amount = NetLoanAmount;
+	IF n_60_dpd = 1 
+		then offer_amount = NetLoanAmount;
+	IF classtranslation in ('Small' 'Checks') and offer_amount > 2400 
+		then offer_amount = 2400;
+	IF OWNST = 'TX' and classtranslation in ('Small' 'Checks') 
+					and offer_amount > 1500 
+		then offer_amount = 1500;
+	IF OWNST = 'OK' and classtranslation in ('Small' 'Checks') 
+					and offer_amount > 1400 
+		then offer_amount = 1400;
+	IF offer_amount > 6000 
+		then offer_amount = 6000;
 run;
 
 *** For when pbita isn't included -------------------------------- ***;
