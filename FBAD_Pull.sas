@@ -1,4 +1,4 @@
-OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
+﻿OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 %LET PULLDATE = %SYSFUNC(today(), yymmdd10.);
 %PUT "&PULLDATE";
@@ -33,26 +33,28 @@ OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 *** Step 1: Pull all data and send to DOD ------------------------ ***;
 data _null_;
-	call symput ('today', 20190829);
+	call symput ('today', 20190913);
 	call symput ('retail_id', 'RetailFBCAD_2019');
 	call symput ('auto_id', 'AutoFBCAD_2019');
 	call symput ('fb_id', 'FBCAD_2019');
 	call symput ('finalexportflagged', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829flagged.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913flagged.txt');
 	call symput ('finalexportdropped', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final.txt');
 	call symput ('exportMLA1', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190829p1.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190913p1.txt');
 	call symput ('exportMLA2', 
-		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190829p2.txt');
+		'\\mktg-APP01\E\Production\MLA\MLA-Input files TO WEBSITE\FBCAD_20190913p2.txt');
 	call symput ('finalexportED', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final_HH.csv');
+	call symput ('finalexportEXCEL', 
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final_HH.xlsx');
 	call symput ('finalexportHH', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final_HH.txt');
 	call symput ('finalexportED2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH2.csv');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final_HH2.csv');
 	call symput ('finalexportHH2', 
-		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190829final_HH2.txt');
+		'\\mktg-APP01\E\cepps\FBAD\Files\FBCAD_20190913final_HH2.txt');
 run;
 
 %put "&_1yrdate" "&yesterday" "&today";
@@ -134,7 +136,7 @@ data XS_L;
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1
 			   DatePaidLast APRate CrScore CurBal NetLoanAmount 
-			   legal_loan_type);
+			   legal_loan_type Acctrefno);
 	where cifno ne "" & 
 		  entdate >= "&_1yrdate" & 
 		  pocd = "" & 
@@ -234,7 +236,7 @@ data loanextraXS;
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter ConProfile1 
 			   DatePaidLast APRate CrScore CurBal NetLoanAmount 
-			   legal_loan_type);
+			   legal_loan_type Acctrefno);
 	where entdate >= "&_1yrdate" & 
 		  pocd = "" & 
 		  plcd = "" & 
@@ -281,7 +283,8 @@ data loanparadataXS;
 			   XNO_TrueDueDate FirstPyDate SrCD pocd POffDate plcd 
 			   PlDate PlAmt BnkrptDate BnkrptChapter DatePaidLast 
 			   APRate CrScore NetLoanAmount XNO_AvailCredit 
-			   XNO_TDuePOff CurBal conprofile1 legal_loan_type);
+			   XNO_TDuePOff CurBal conprofile1 legal_loan_type 
+			   Acctrefno);
 	where entdate >= "&_1yrdate" & 
 		  plcd = "" & 
 		  pocd = "" & 
@@ -563,7 +566,7 @@ data loan_pull;
 			   ClassTranslation XNO_TrueDueDate FirstPyDate SrCD pocd
 			   POffDate purcd plcd PlDate PlAmt BnkrptDate 
 			   BnkrptChapter DatePaidLast APRate CrScore CurBal NetLoanAmount 
-			   legal_loan_type);
+			   legal_loan_type Acctrefno);
 	where POffDate between "&_1yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "50") & 
 		  ownst in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
@@ -599,7 +602,7 @@ data loanextrafb; /* Find NLS loans not in vw_nls_loan */
 			   FirstPyDate SrCD pocd POffDate purcd plcd PlDate 
 			   PlAmt BnkrptDate BnkrptChapter DatePaidLast APRate 
 			   CrScore NetLoanAmount XNO_AvailCredit XNO_TDuePOff 
-			   CurBal conprofile1 legal_loan_type);
+			   CurBal conprofile1 legal_loan_type Acctrefno);
 	where POffDate between "&_1yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "50") & 
 		  ownst in("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA", 
@@ -638,7 +641,7 @@ data loanparadatafb;
 			   FirstPyDate SrCD purcd pocd POffDate plcd PlDate PlAmt
 			   BnkrptDate BnkrptChapter DatePaidLast APRate CrScore
 			   NetLoanAmount XNO_AvailCredit XNO_TDuePOff CurBal
-			   conprofile1 legal_loan_type);
+			   conprofile1 legal_loan_type Acctrefno);
 	where POffDate between "&_1yrdate" and "&yesterday" & 
 		  (pocd = "13" or pocd = "10" or pocd = "50") & 
 		  ownst not in ("SC", "NM", "NC", "OK", "VA", "TX", "AL", "GA",
@@ -1182,6 +1185,41 @@ data Merged_L_B2;
 	if equityt < 10 then et_flag = "X";
 	if xno_availcredit < 100 then et_flag = "X";
 	if purcd in ("011", "020", "015") then dlqren_flag = "X";
+
+	if ownbr = "0251" then old_branch = ownbr;
+	if ownbr = "0252" then old_branch = ownbr;
+	if ownbr = "0253" then old_branch = ownbr;
+	if ownbr = "0254" then old_branch = ownbr;
+	if ownbr = "0255" then old_branch = ownbr;
+	if ownbr = "0256" then old_branch = ownbr;
+	if zip =: "36264" & ownbr = "0877" then old_branch = ownbr;
+	if ownbr = "0877" then old_branch = ownbr;
+	if ownbr = "0159" then old_branch = ownbr;
+	if zip =: "29659" & ownbr = "0152" then old_branch = ownbr;
+	if ownbr = "0152" then old_branch = ownbr;
+	if ownbr = "0885" then old_branch = ownbr;
+	if ownbr = "0302" then old_branch = ownbr;
+	if ownbr = "0102" then old_branch = ownbr;
+	if ownbr = "0150" then old_branch = ownbr;
+	if ownbr = "0890" then old_branch = ownbr;
+	if ownbr = "1016" then old_branch = ownbr;
+	if ownbr = "1003" and zip =: "87112" then old_branch = ownbr;
+	if ownbr = "1018" then old_branch = ownbr;
+	IF OWNBR='0151' THEN old_branch=ownbr; 
+	IF OWNBR='0668' THEN old_branch=ownbr; 
+	IF OWNBR='0152' THEN old_branch=ownbr; 
+	IF OWNBR='0159' THEN old_branch=ownbr; 
+	IF OWNBR='0302' THEN old_branch=ownbr; 
+	IF OWNBR='0877' THEN old_branch=ownbr; 
+	IF OWNBR='1004' THEN old_branch=ownbr; 
+	IF OWNBR='1309' THEN old_branch=ownbr; 
+	IF OWNBR='0682' THEN old_branch=ownbr; 
+	IF OWNBR='0307' THEN old_branch=ownbr; 
+	IF OWNBR='0927' THEN old_branch=ownbr; 
+	IF OWNBR='0903' THEN old_branch=ownbr; 
+	IF OWNBR='0925' THEN old_branch=ownbr; 
+	IF OWNBR='0928' THEN old_branch=ownbr;
+
 	if ownbr = "0251" then ownbr = "0580";
 	if ownbr = "0252" then ownbr = "0683";
 	if ownbr = "0253" then ownbr = "0581";
@@ -1201,6 +1239,21 @@ data Merged_L_B2;
 	if ownbr = "1016" then ownbr = "1008";
 	if ownbr = "1003" and zip =: "87112" then ownbr = "1013";
 	if ownbr = "1018" then ownbr = "1008";
+	IF OWNBR='0151' THEN OWNBR='0104'; 
+	IF OWNBR='0668' THEN OWNBR='0680'; 
+	IF OWNBR='0152' THEN OWNBR='0308'; 
+	IF OWNBR='0159' THEN OWNBR='0132'; 
+	IF OWNBR='0302' THEN OWNBR='0133'; 
+	IF OWNBR='0877' THEN OWNBR='0806'; 
+	IF OWNBR='1004' THEN OWNBR='1019'; 
+	IF OWNBR='1309' THEN OWNBR='1305'; 
+	IF OWNBR='0682' THEN OWNBR='0653'; 
+	IF OWNBR='0307' THEN OWNBR='0104'; 
+	IF OWNBR='0927' THEN OWNBR='0907'; 
+	IF OWNBR='0903' THEN OWNBR='0924'; 
+	IF OWNBR='0925' THEN OWNBR='0912'; 
+	IF OWNBR='0928' THEN OWNBR='0909';
+
 	IF legal_loan_type = "AL MINI-CODE" THEN ALMINICODE_FLAG = "X";
 	IF ENTDATE < "&_121day" THEN ALMINICODE_FLAG = "";
 	IF CLASSTRANSLATION in ("Retail", "Auto-I", "Auto-D") 
@@ -1842,7 +1895,7 @@ run;
 *** Step 2: Import file FROM DOD, append offer information, and    ***;
 *** append PB if applicable -------------------------------------- ***;
 filename mla1 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190829p1.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190913p1.txt";
 
 data mla1;
 	infile mla1;
@@ -1858,7 +1911,7 @@ data mla1;
 run;
 
 filename mla2 
-	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190829p2.txt";
+	"\\mktg-app01\E\Production\MLA\MLA-Output files FROM WEBSITE\MLA_5_0_FBCAD_20190913p2.txt";
 
 data mla2;
 	infile mla2;
@@ -1986,8 +2039,8 @@ data fbxsita_hh;
 	IF classtranslation in ('Small' 'Checks') and offer_amount > 2400 
 		then offer_amount = 2400;
 	IF OWNST = 'TX' and classtranslation in ('Small' 'Checks') 
-					and offer_amount > 1500 
-		then offer_amount = 1500;
+					and 2500 > offer_amount > 1400 
+		then offer_amount = 1400;
 	IF OWNST = 'OK' and classtranslation in ('Small' 'Checks') 
 					and offer_amount > 1400 
 		then offer_amount = 1400;
@@ -2015,12 +2068,16 @@ proc sql;
 		   dob, mla_status, risk_segment, n_60_dpd, conprofile, 
 		   bracctno, cifno, campaign_id, mgc, month_split, made_unmade,
 		   fico_range_25pt, state1, test_code, poffdate, phone,
-		   cellphone
+		   cellphone, Acctrefno, old_branch
 	from finalhh3;
 quit;
 
 proc export 
 	data = finalesthh outfile = "&finalexportHH2" dbms = tab;
+run;
+
+proc export 
+	data = finalesthh outfile = "&finalexportEXCEL" dbms = excel;
 run;
 
 proc export 
